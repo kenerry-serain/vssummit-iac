@@ -1,0 +1,12 @@
+- name: Installing Argo
+  hosts: master
+  gather_facts: no
+  remote_user: admin
+  tasks:
+  - name: Creating Argo Namespace
+    shell: kubectl create namespace argocd
+    
+  - name: Creating Argo Resources
+    shell: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+  

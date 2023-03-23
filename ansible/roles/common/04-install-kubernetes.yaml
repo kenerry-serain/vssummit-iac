@@ -1,0 +1,28 @@
+- name: Installing kubeadm & kubectl & kubelet
+  hosts: production
+  gather_facts: no
+  remote_user: admin
+  become: yes
+  tasks:
+  - name: Adding Kubernetes Signing Key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+  
+  - name: Adding Kubernetes Repository into sources list
+    apt_repository:
+      repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+  
+  - name: Installing kubelet & kubeadm & kubectl
+    apt: 
+      name: kubelet, kubeadm, kubectl
+      update_cache: yes
+  
+  - name: Holding kubelet & kubeadm & kubectl
+    dpkg_selections:
+      name: "{{ item }}"
+      selection: hold
+    loop:
+      - kubelet
+      - kubeadm
+      - kubectl

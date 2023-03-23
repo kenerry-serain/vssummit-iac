@@ -1,0 +1,72 @@
+- name: Joining Workers Machines to the Cluster 01
+  hosts: master
+  gather_facts: no
+  remote_user: admin
+  tasks:
+  - name: Creating Join Token
+    shell: kubeadm token create --print-join-command
+    register: join_command_raw
+  
+  - name: Copying JoinCommand to Local File.
+    local_action: copy content="{{ join_command_raw.stdout_lines[0] }}" dest="/tmp/kubernetes_join_command" mode=0777
+
+- name: Joining Workers Machines to the Cluster 02
+  hosts: nodes
+  gather_facts: no
+  remote_user: admin
+  become: yes
+  tasks:
+  - name: Copying JoinCommand from Ansible Host to the Worker Nodes.
+    copy:
+      src: /tmp/kubernetes_join_command
+      dest: /tmp/kubernetes_join_command
+      mode: 0777
+
+  - name: Creating KubeAdm Join Worker Node Configuration
+    shell: |
+        cat > /home/admin/kubeadm-join.yaml <<EOF 
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: JoinConfiguration
+          discovery:
+            bootstrapToken:
+              token: "<KubeAdmToken>"
+              apiServerEndpoint: "<ApiServerEndpoint>"
+              caCertHashes:
+              - "<SHACertToken>"
+          nodeRegistration:
+            name: <InstanceDNS>
+            criSocket: "/var/run/cri-dockerd.sock"
+            kubeletExtraArgs:
+              cloud-provider: aws
+        EOF
+
+  - name: Getting Kubernetes Bootstraped Token
+    command: grep -P "(?<=token ).*?(?=\s)" /tmp/kubernetes_join_command -o
+    register: kube_adm_token
+
+  - name: Setting Kubernetes Bootstraped Token
+    command: sed -i "s/<KubeAdmToken>/{{kube_adm_token.stdout_lines[0]}}/" /home/admin/kubeadm-join.yaml
+
+  - name: Getting SHA Cert Token
+    command: grep -P "(?<=discovery-token-ca-cert-hash ).*?(?=\s)" /tmp/kubernetes_join_command -o
+    register: sha_cert_token
+
+  - name: Setting SHA Cert Token
+    command: sed -i "s/<SHACertToken>/{{sha_cert_token.stdout_lines[0]}}/" /home/admin/kubeadm-join.yaml
+
+  - name: Getting Api Server Endpoint
+    command: grep -P "(?<=join ).*?(?=\s)" /tmp/kubernetes_join_command -o
+    register: api_server_endpoint
+
+  - name: Setting Api Server Endpoint
+    command: sed -i "s/<ApiServerEndpoint>/{{api_server_endpoint.stdout_lines[0]}}/" /home/admin/kubeadm-join.yaml
+
+  - name: Getting Worker Hostname
+    command: hostname
+    register: hostname
+
+  - name: Setting Worker Hostname
+    command: sed -i "s/<InstanceDNS>/{{hostname.stdout_lines[0]}}/" /home/admin/kubeadm-join.yaml
+
+  - name: Joining the Worker nodes to the cluster.
+    command: kubeadm join --config /home/admin/kubeadm-join.yaml

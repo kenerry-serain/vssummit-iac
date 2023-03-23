@@ -1,0 +1,7 @@
+- name: Configuring Kubernetes CNI
+  hosts: master
+  gather_facts: no
+  remote_user: admin
+  tasks:
+  - name: Configuring Kubernetes CNI
+    shell: kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml

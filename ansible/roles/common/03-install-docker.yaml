@@ -1,0 +1,28 @@
+- name: Installing Docker Engine
+  hosts: production
+  gather_facts: no
+  remote_user: admin
+  become: yes
+  tasks:
+  - name: Creating directory if it does not exist
+    file:
+      path: /etc/apt/keyrings
+      state: directory
+      mode: '0755'
+ 
+  - name: Adding Docker Signing Key
+    apt_key:
+      url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+      keyring: /etc/apt/keyrings/docker.gpg
+  
+  - name: Adding Docker Repository into Sources List
+    apt_repository:
+      repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bullseye stable
+  
+  - name: Installing Docker
+    apt: 
+      name: 
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+      update_cache: yes

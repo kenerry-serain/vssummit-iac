@@ -1,0 +1,59 @@
+- name: Starting Kubernetes Cluster
+  hosts: master
+  gather_facts: no
+  remote_user: admin
+  become: yes
+  tasks:
+  - name: Getting public IP
+    shell: curl ifconfig.me
+    register: instance_ip
+    
+  - name: Creating KubeAdm File
+    shell: |
+        cat > /home/admin/kubeadm.yaml <<EOF 
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "10.100.0.0/16"
+            podSubnet: "10.244.0.0/16"
+          apiServer:
+            certSANs:
+            - 127.0.0.1
+            - {{ instance_ip.stdout_lines[0] }}
+            extraArgs:
+              cloud-provider: "aws"
+          controllerManager:
+            extraArgs:
+              cloud-provider: "aws"
+        ---
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: InitConfiguration
+          nodeRegistration:
+            criSocket: "/var/run/cri-dockerd.sock"
+            kubeletExtraArgs:
+              cloud-provider: aws
+        EOF
+
+  - name: Configuring Kubernetes Cluster
+    shell: kubeadm init --config /home/admin/kubeadm.yaml
+
+  - name: Creating '.kube' Directory
+    file:
+      path: /home/admin/.kube
+      state: directory
+      mode: 0755
+
+  - name: Copying 'admin.conf' file to user's kube config
+    copy:
+      src: /etc/kubernetes/admin.conf
+      dest: /home/admin/.kube/config
+      remote_src: yes
+      owner: admin
+
+  - name: Recursively Changing Directory Ownership
+    ansible.builtin.file:
+      path: /etc/kubernetes
+      state: directory
+      recurse: yes
+      owner: admin
+      group: admin

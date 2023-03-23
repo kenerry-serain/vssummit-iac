@@ -1,0 +1,10 @@
+- import_playbook: ./roles/common/01-copy-files-to-machines.yaml
+- import_playbook: ./roles/common/01.1-setup-aws-hostnames.yaml
+- import_playbook: ./roles/common/02-install-dependency-packages.yaml
+- import_playbook: ./roles/common/03-install-docker.yaml
+- import_playbook: ./roles/common/04-install-kubernetes.yaml
+- import_playbook: ./roles/common/05-configure-container-runtime-interface.yaml
+- import_playbook: ./roles/common/06-configure-master-node-cluster.yaml
+- import_playbook: ./roles/common/07-configure-container-network-interface.yaml
+- import_playbook: ./roles/common/08-join-worker-nodes-to-cluster.yaml
+# - import_playbook: ./roles/common/09-install-argo.yaml

@@ -1,0 +1,7 @@
+- name: Configuring Kubernetes CRI 
+  hosts: production
+  gather_facts: yes
+  become: yes
+  tasks:
+  - name: Configuring Kubernetes CRI
+    shell: /home/admin/configure-docker-cri.sh

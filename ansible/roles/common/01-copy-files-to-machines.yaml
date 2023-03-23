@@ -1,0 +1,23 @@
+# - name: Copying SSH key to bastion host
+#   hosts: bastion
+#   remote_user: admin
+#   tasks:
+#   - name: Copying SSH key to bastion host
+#     copy:
+#       src: ../../inventories/production/ec2-kp-us-east-1-prd-salesbox.pem
+#       dest: /home/admin/ec2-kp-us-east-1-prd-salesbox.pem
+#       owner: admin
+#       group: admin
+#       mode: '400'
+
+- name: Uploading files to EC2 instance
+  hosts: all
+  remote_user: admin
+  tasks:
+  - name: Uploading Custom shell to configure Kubernetes x Docker Communication through CRI
+    copy:
+      src: ../../files/configure-docker-cri.sh
+      dest: /home/admin/configure-docker-cri.sh
+      owner: admin
+      group: admin
+      mode: '755'
